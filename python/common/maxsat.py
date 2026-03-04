@@ -141,8 +141,11 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
   crossover_prob  = float(kwargs.get('crossover_prob') or 0.85)
   mutation_prob   = float(kwargs.get('mutation_prob')  or 3 / n)
 
-  parents_size    = int(population_size * 0.2)
-  offspring_size  = int(population_size * 0.8)
+  parents_ratio   = float(kwargs.get('parents_ratio')   or 0.2)
+  offspring_ratio = float(kwargs.get('offspring_ratio') or 0.8)
+
+  parents_size    = int(population_size * parents_ratio)
+  offspring_size  = int(population_size * offspring_ratio)
 
   if verbose:
     print({
@@ -173,12 +176,12 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
     generation += 1
 
     parent_indexes  = np.argsort(costs)[-parents_size:]
-    t1 = time.perf_counter()
-    # parents         = population[parent_indexes]
-    # parent_costs    = costs[parent_indexes]
+    parents         = population[parent_indexes]
 
-    offspring = population[parent_indexes]
-    t2 = time.perf_counter()
+    # create offspring_size offspring from parents
+    offspring  = np.empty((offspring_size, n), dtype=population.dtype)
+    sampled    = rng.integers(0, parents_size, size=offspring_size)
+    offspring  = parents[sampled].copy()
 
     # crossover
     for i in range(0, offspring_size):

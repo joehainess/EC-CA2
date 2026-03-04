@@ -48,6 +48,8 @@ match args.question:
         q3parser.add_argument('-population_size')
         q3parser.add_argument('-crossover_prob')
         q3parser.add_argument('-mutation_prob')
+        q3parser.add_argument('-parents_ratio')
+        q3parser.add_argument('-offspring_ratio')
 
         q3parser.add_argument('-verbose','-v', action='store_true')
         q3parser.add_argument('-graph','-g',   action='store_true')
