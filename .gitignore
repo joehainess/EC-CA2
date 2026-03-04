@@ -1,0 +1,11 @@
+
+/EvalMaxSAT
+/extract
+/mse17-complete-unweighted-benchmarks
+
+/python/tmp
+/python/copy-to-arm64
+/python/run-on-arm64
+
+__pycache__
+.venv
