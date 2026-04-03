@@ -6,7 +6,7 @@ def run(wdimacs, time_budget, repetitions, **kwargs):
 
   n,m,clauses = parse_wdimacs(wdimacs)
 
-  verbose = kwargs.get('verbose') or False
+  verbose = kwargs.get('verbose') or 0
   graph   = kwargs.get('graph')   or False
   boxplot = kwargs.get('boxplot') or False
 
@@ -27,10 +27,10 @@ def run(wdimacs, time_budget, repetitions, **kwargs):
     line = None
     if ax:
       alpha = max(0.2, (1/int(repetitions)))
-      line, = ax.plot([], [], "b-", linewidth=1, alpha=alpha)
+      line, = ax.plot([], [], color="red", linestyle="-", linewidth=1, alpha=alpha)
     
     # run EA
-    t,nsat,xbest = evolutionary_algorithm(n, m, clauses, int(time_budget), **{**kwargs,'ax':ax,'line':line})
+    t,nsat,xbest,*_ = evolutionary_algorithm(n, m, clauses, int(time_budget), **{**kwargs,'ax':ax,'line':line})
     
     nsat_log.append(int(nsat))
     print(
@@ -40,12 +40,12 @@ def run(wdimacs, time_budget, repetitions, **kwargs):
   # remove graph
   if ax:
     plt.ioff()
-    plt.close('all')
+    # plt.close('all')
     plt.show()
   
   # draw boxplot of results
   if boxplot:
-    if verbose:
+    if verbose >= 1:
       print(nsat_log)
     plt.boxplot([nsat_log], labels=["1"], vert=False)
     plt.draw()

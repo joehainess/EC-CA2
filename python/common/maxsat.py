@@ -113,9 +113,16 @@ def population_n_sat(clauses, population):
     
     return fitness
 
+def get_param(d, key, default):
+    val = d.get(key)
+    if val is None:
+        return default
+    return type(default)(val)   # cast to whatever type the default is
+
+
 def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget: int, **kwargs):
   """
-  Solves a maximum satisfiability (MAX-SAT) problem using an evolutionary algorithm.
+  mu, lambda selection
   
   Args:
     n (int): number of variables
@@ -125,42 +132,41 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
     time_budget (float): The maximum amount of time (in seconds) allowed for the algorithm to run.
   
   Returns:
-    triple of [t, nsat, xbest], where
-      * t     is the runtime (number of generations * population size)
-      * nsat  is the number of satisfies clauses in the returned solution
-      * xbest is the solution found by the algorithm
-  
+    tuple of [t, nsat, xbest, history_generations, history_best_nsat], where
+      * t                     is the runtime (number of generations * population size)
+      * nsat                  is the number of satisfies clauses in the returned solution
+      * xbest                 is the solution found by the algorithm
+      * history_generations   list of generation history
+      * history_best_nsat     list of best nsat for the corresponding generation in history_generations
   """
 
-  ax      = kwargs.get('ax')       or False
-  line    = kwargs.get('line')     or False
-  verbose = kwargs.get('verbose')  or False
+  ax              = kwargs.get('ax')
+  line            = kwargs.get('line')
+  verbose         = get_param(kwargs, 'verbose', 0)
 
-  # model arguments
-  population_size = int(kwargs.get('population_size')  or 100)
-  crossover_prob  = float(kwargs.get('crossover_prob') or 0.85)
-  mutation_prob   = float(kwargs.get('mutation_prob')  or 3 / n)
+  mu_count        = get_param(kwargs, 'mu', 5)
+  lambda_mu_ratio = get_param(kwargs, 'lambda_mu_ratio', 6)
+  crossover_prob  = get_param(kwargs, 'crossover_prob', 0.85)
+  mutation_prob   = get_param(kwargs, 'mutation_prob', 1 / n)
 
-  parents_ratio   = float(kwargs.get('parents_ratio')   or 0.2)
-  offspring_ratio = float(kwargs.get('offspring_ratio') or 0.8)
+  max_generations = get_param(kwargs, 'max_generations', -1)
 
-  parents_size    = int(population_size * parents_ratio)
-  offspring_size  = int(population_size * offspring_ratio)
+  lambda_count = mu_count * lambda_mu_ratio
 
-  if verbose:
+  if verbose >= 1:
     print({
-      'population_size': population_size,
+      'mu_count': mu_count,
+      'lambda_mu_ratio': lambda_mu_ratio,
       'crossover_prob': crossover_prob,
       'mutation_prob': mutation_prob,
-      'parents_size': parents_size,
-      'offspring_size': offspring_size,
+      'max_generations': max_generations,
     })
 
   start = time.time()
   end   = start + time_budget
 
   # initialise population
-  population      = rng.integers(2, size=(population_size, n))
+  population      = rng.integers(2, size=(mu_count, n))
   costs           = population_n_sat(clauses, population) # np.apply_along_axis(lambda ind: n_sat(clauses, ind), 1, population)
 
   xbest = None
@@ -169,47 +175,40 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
   generation = 0
   history_generations = []
   history_best_nsat   = []
-  while time.time() <= end:
+  while time.time() <= end and (max_generations == -1 or generation < max_generations):
 
-    start = time.perf_counter()
+    loop_start = time.perf_counter()
 
     generation += 1
 
-    parent_indexes  = np.argsort(costs)[-parents_size:]
-    parents         = population[parent_indexes]
+    # sample lambda_count offspring from population uniformly at random
+    sampled    = rng.integers(0, mu_count, size=lambda_count)
+    offspring  = population[sampled].copy()
 
-    # create offspring_size offspring from parents
-    offspring  = np.empty((offspring_size, n), dtype=population.dtype)
-    sampled    = rng.integers(0, parents_size, size=offspring_size)
-    offspring  = parents[sampled].copy()
-
-    # crossover
-    for i in range(0, offspring_size):
+    # apply crossover to offspring
+    for i in range(0, int(lambda_count/2)):
       if rng.random() < crossover_prob:
-        o1,o2 = np.random.choice(len(offspring), size=2)
-        crossover = rng.integers(0, n)
+        o1 = i*2
+        o2 = i*2 + 1
+        crossover = rng.integers(0, n-1)
         c1 = np.concatenate((offspring[o1][0:crossover], offspring[o2][crossover:n]))
         c2 = np.concatenate((offspring[o2][0:crossover], offspring[o1][crossover:n]))
         offspring[o1] = c1
         offspring[o2] = c2
     t3 = time.perf_counter()
     
-    # mutation
+    # apply mutation to offspring
     for idx,child in enumerate(offspring):
       mask = rng.random(n) < mutation_prob
-      offspring[idx] = np.logical_xor(offspring[idx], mask).astype(int)
+      offspring[idx] = np.logical_xor(child, mask).astype(int)
     
-    # truncation selection
     t4 = time.perf_counter()
+    # offspring truncation selection
     offspring_costs = population_n_sat(clauses, offspring)
-    new_population  = np.concatenate((population, offspring))
-    new_costs       = np.concatenate((costs, offspring_costs)) # np.apply_along_axis(lambda ind: n_sat(clauses, ind), 1, new_population)
-    idxs            = np.argsort(new_costs)[-population_size:]
+    idxs            = np.argsort(offspring_costs)[-mu_count:]
+    population      = offspring[idxs]
+    costs           = offspring_costs[idxs]
     t5 = time.perf_counter()
-
-    # update population & costs (should be in order)
-    population = new_population[idxs]
-    costs      = new_costs[idxs]
 
     # Update best idx
     best_idx  = np.argmax(costs)
@@ -218,7 +217,7 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
     if (best_nsat > nsat):
       xbest = best_ind
       nsat = best_nsat
-      if verbose:
+      if verbose >= 2:
         print(f"[Generation {generation}] New best: {nsat} / {m} ({(100 * nsat / m):.2f}%)")
     
     if best_nsat == m:
@@ -243,7 +242,7 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
 
     t7 = time.perf_counter()
 
-    # print(f"Part 1: {t1 - start:.6f}s")
+    # print(f"Part 1: {t1 - loop_start:.6f}s")
     # print(f"Part 2: {t2 - t1:.6f}s")
     # print(f"Part 3: {t3 - t2:.6f}s")
     # print(f"Part 4: {t4 - t3:.6f}s")
@@ -251,10 +250,10 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
     # print(f"Part 6: {t6 - t5:.6f}s")
     # print(f"Part 7: {t7 - t6:.6f}s")
   
-  if ax:
-    # draw "crosshair" on final point
-    ax.axhline(y=nsat,       linestyle=":", linewidth=1, color="#000000", alpha=0.2)
-    ax.axvline(x=generation, linestyle=":", linewidth=1, color="#000000", alpha=0.2)
+  # # draw "crosshair" on final point
+  # if ax:
+  #   ax.axhline(y=nsat,       linestyle=":", linewidth=1, color="#000000", alpha=0.2)
+  #   ax.axvline(x=generation, linestyle=":", linewidth=1, color="#000000", alpha=0.2)
 
-  t = generation * population_size
-  return t,nsat,xbest
+  t = generation * mu_count
+  return t,nsat,xbest,history_generations,history_best_nsat

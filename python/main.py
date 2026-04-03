@@ -50,8 +50,9 @@ match args.question:
         q3parser.add_argument('-mutation_prob')
         q3parser.add_argument('-parents_ratio')
         q3parser.add_argument('-offspring_ratio')
+        q3parser.add_argument('-max_generations')
 
-        q3parser.add_argument('-verbose','-v', action='store_true')
+        q3parser.add_argument('-verbose','-v', action='count')
         q3parser.add_argument('-graph','-g',   action='store_true')
         q3parser.add_argument('-boxplot','-b', action='store_true')
         q3args = q3parser.parse_args()
