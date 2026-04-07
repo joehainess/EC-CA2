@@ -1,4 +1,4 @@
-from common.maxsat import parse_wdimacs,parse_assignment_str,n_sat
+from src.common.maxsat import parse_wdimacs,parse_assignment_str,n_sat
 
 # Exercise 2. (10 % of the marks) Implement a routine for importing MAXSAT instances on the
 # WDIMACS file format. A WDIMACS file is a text file where each line either

@@ -1,7 +1,6 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[margin=1in]{geometry}
 
-% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
@@ -57,11 +56,11 @@ Joseph Haines\\
 % \texttt{def evolutionary\_algorithm(n: int, m: int, clauses: List[List[int]], time\_budget: int, **kwargs):}
 
 $\mu,\lambda$ Binary Genetic Algorithm with Crossover for MAX-SAT Optimisation \\
-\textit{Python Implementation: \texttt{./common/maxsat.py}}
+\textit{Python Implementation: ./common/maxsat.py} \\
+\textit{Full Source Code: [TODO]} \\
 
-\noindent
+\noindent \textbf{Pseudocode:}
 \begin{verbatim}
-
 // Input variables
 let n           = number of variables
 let m           = number of clauses
@@ -243,7 +242,7 @@ For each parameter setting, 100 independent trials were performed with a 5 secon
 
 \begin{figure}[!h]
   \centering
-  \includegraphics[width=\textwidth]{exercise5/output/lambda_mu_ratio/lambda_mu_ratio_5s_100x_normalized-fir06_area_delay_rev66-4_10tree305p.png}
+  \includegraphics[width=\textwidth]{plots/exercise5/lambda_mu_ratio/lambda_mu_ratio_5s_100x_normalized-fir06_area_delay_rev66-4_10tree305p.png}
   \caption{\texttt{lambda\_mu\_ratio} trial results}
 \end{figure}
 
@@ -268,7 +267,7 @@ For each parameter setting, 100 independent trials were performed with a 5 secon
 
 \begin{figure}[!h]
   \centering
-  \includegraphics[width=\textwidth]{exercise5/output/crossover_prob/crossover_prob_5s_100x_normalized-fir06_area_delay_rev66-4_10tree305p.png}
+  \includegraphics[width=\textwidth]{plots/exercise5/crossover_prob/crossover_prob_5s_100x_normalized-fir06_area_delay_rev66-4_10tree305p.png}
   \caption{\texttt{crossover\_prob} trial results}
 \end{figure}
 
@@ -293,7 +292,7 @@ For each parameter setting, 100 independent trials were performed with a 5 secon
 
 \begin{figure}[!h]
   \centering
-  \includegraphics[width=\textwidth]{exercise5/output/mutation_prob/mutation_prob_5s_100x_normalized-fir06_area_delay_rev66-4_10tree305p.png}
+  \includegraphics[width=\textwidth]{plots/exercise5/mutation_prob/mutation_prob_5s_100x_normalized-fir06_area_delay_rev66-4_10tree305p.png}
   \caption{\texttt{mutation\_prob} trial results}
 \end{figure}
 
@@ -304,7 +303,7 @@ To confirm this hypothesis, additional experiments were conducted with a longer 
 
 \begin{figure}[!h]
   \centering
-  \includegraphics[width=0.5\textwidth]{multi_param_graph/output/mutation_prob/mutation_prob_20s_40x_normalized-fir06_area_delay.png}
+  \includegraphics[width=0.5\textwidth]{plots/parameter_sweep/mutation_prob/mutation_prob_20s_40x_normalized-fir06_area_delay.png}
   \caption{\texttt{mutation\_prob} convergence over time (20s budget, single instance)}
   \label{fig:mutation_prob_convergence}
 \end{figure}

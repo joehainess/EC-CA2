@@ -1,4 +1,4 @@
-from common.maxsat import parse_wdimacs,evolutionary_algorithm
+from src.common.maxsat import parse_wdimacs,evolutionary_algorithm
 import cProfile
 import matplotlib.pyplot as plt
 

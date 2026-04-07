@@ -1,9 +1,9 @@
 import argparse
 import sys
 
-import questions.q1
-import questions.q2
-import questions.q3
+import src.questions.q1
+import src.questions.q2
+import src.questions.q3
 
 prog_name = sys.argv[0]
 
@@ -23,7 +23,7 @@ match args.question:
         q1parser.add_argument('-assignment', required=True)
         q1args = q1parser.parse_args()
 
-        result = questions.q1.run(q1args.clause, q1args.assignment)
+        result = src.questions.q1.run(q1args.clause, q1args.assignment)
         if result != None:
           print(result)
 
@@ -34,7 +34,7 @@ match args.question:
         q2parser.add_argument('-assignment', required=True)
         q2args = q2parser.parse_args()
 
-        result = questions.q2.run(q2args.wdimacs, q2args.assignment)
+        result = src.questions.q2.run(q2args.wdimacs, q2args.assignment)
         if result != None:
           print(result)
 
@@ -60,7 +60,7 @@ match args.question:
         wdimacs, time_budget, repetitions = (vars(q3args)[k] for k in ['wdimacs', 'time_budget', 'repetitions'])
         kwargs = {k: v for k, v in vars(q3args).items() if k not in ('wdimacs', 'time_budget', 'repetitions')}
 
-        result = questions.q3.run(wdimacs, time_budget, repetitions, **kwargs)
+        result = src.questions.q3.run(wdimacs, time_budget, repetitions, **kwargs)
         if result != None:
           print(result)
 

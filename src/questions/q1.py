@@ -1,4 +1,4 @@
-from common.maxsat import parse_clause_str,parse_assignment_str,sat_check
+from src.common.maxsat import parse_clause_str,parse_assignment_str,sat_check
 
 
 # Exercise 1. (10 % of the marks) Implement a satisfiability checker which given a clause and an

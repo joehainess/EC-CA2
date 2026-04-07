@@ -5,7 +5,7 @@ import sys
 import time
 import numpy as np
 import re
-from common.maxsat import parse_wdimacs,evolutionary_algorithm
+from src.common.maxsat import parse_wdimacs,evolutionary_algorithm
 import matplotlib.pyplot as plt
 
 def run_parallel(fn, n, args, kwargs, max_workers):
@@ -50,8 +50,8 @@ if __name__ == '__main__':
   time_budget = int(time_budget)
   repetitions = int(repetitions)
 
-  instance_folder   = 'exercise5/instances'
-  output_folder     = 'exercise5/output'
+  instance_folder   = 'benchmark_instances'
+  output_folder     = 'plots/exercise5'
   wdimacs_instances = [
     'bcp-fir/normalized-fir06_area_delay.wcnf',
     'reversi/rev66-4.wcnf',

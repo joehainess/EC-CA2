@@ -6,7 +6,7 @@ import sys
 import time
 import numpy as np
 import re
-from common.maxsat import parse_wdimacs,evolutionary_algorithm
+from src.common.maxsat import parse_wdimacs,evolutionary_algorithm
 import matplotlib.pyplot as plt
 
 
@@ -72,22 +72,17 @@ if __name__ == '__main__':
   time_budget = int(time_budget)
   repetitions = int(repetitions)
 
-  output_folder     = 'multi_param_graph/output'
+  output_folder     = 'plots/parameter_sweep'
 
-  # parameter         = 'population_size'
-  # parameter_values  = [25,50,100,150,200,250]
-  # parameter         = 'parents_ratio'
-  # parameter_values  = [0.1,0.2,0.3,0.4,0.5]
   # parameter         = 'lambda_mu_ratio'
   # parameter_values  = [2,3,4,5,6,7,8,9,10]
   # parameter         = 'crossover_prob'
   # parameter_values  = [0,0.1,0.5,0.75,0.8,0.85,0.9,0.95,1]
   parameter         = 'mutation_prob'
   parameter_values  = ['1/n','5/n','10/n','15/n','20/n','25/n']
-  # parameter         = 'mu'
-  # parameter_values  = [2,3,4,5,6,7,8]
-  colors            = ["#DBA714","#391FEA","#E5154B","#3E9A71","#3495F5","#DB5E3A","#46385C","#8625B8","#83CA5D","#6252A1","#57510C","#D9B182",]
+
   parallelism       = max(1, os.cpu_count() - 3) # leave 3 cores free for OS
+  colors            = ["#DBA714","#391FEA","#E5154B","#3E9A71","#3495F5","#DB5E3A","#46385C","#8625B8","#83CA5D","#6252A1","#57510C","#D9B182",]
 
   print(f"""
   wdimacs               {wdimacs}
