@@ -31,16 +31,11 @@ if __name__ == '__main__':
   prog_name = sys.argv[0]
 
   parser = argparse.ArgumentParser(prog=prog_name)
-  # parser.add_argument('-question',    required=True, choices=['3'])
-  # parser.add_argument('-wdimacs',     required=True)
   parser.add_argument('-time_budget', required=True)
   parser.add_argument('-repetitions', required=True)
-  # parser.add_argument('-parameter',        required=True)
-  # parser.add_argument('-parameter_values', required=True)
-
-  # parser.add_argument('-population_size')
-  # parser.add_argument('-crossover_prob')
-  # parser.add_argument('-mutation_prob')
+  # parser.add_argument('-wdimacs_instances', required=True)
+  # parser.add_argument('-parameter',         required=True)
+  # parser.add_argument('-parameter_values',  required=True)
 
   parser.add_argument('-max_generations')
   parser.add_argument('-verbose','-v', action='count')
@@ -57,51 +52,18 @@ if __name__ == '__main__':
 
   instance_folder   = 'exercise5/instances'
   output_folder     = 'exercise5/output'
-  # wdimacs_instances = [
-  #   'c1335.wcnf',
-  #   'c3540.wcnf',
-  #   'reversi/rev44-4.wcnf',
-  #   'reversi/rev44-20.wcnf',
-  #   'bcp-fir/normalized-f20c10b_015_area_delay.wcnf',
-  #   'gen-hyper-tw/GenHyperTW_b02.wcnf',
-  #   'bcp-mtg/c6288_F69gat@1.wcnf',
-  #   'bcp-mtg/c3540_F45@0.wcnf',
-  #   'bcp-mtg/c3540_F41@1.wcnf',
-  #   'treewidth-computation/TWComp_barley-pp_N26.wcnf',
-  # ]
-  # wdimacs_instances = [
-  #   # 'c1335.wcnf',
-  #   # 'reversi/rev44-4.wcnf',
-  #   # 'min-fill/MinFill_R0_myciel3.wcnf',
-  #   # 'c3540.wcnf',
-  #   'reversi/rev44-20.wcnf',
-  #   # 'bcp-fir/normalized-f20c10b_015_area_delay.wcnf',
-  #   # 'gen-hyper-tw/GenHyperTW_b02.wcnf',
-  #   # 'bcp-mtg/c3540_F20@1.wcnf',
-  #   'bcp-mtg/c6288_F69gat@1.wcnf',
-  #   # 'bcp-mtg/c3540_F45@0.wcnf',
-  #   # 'bcp-mtg/c3540_F41@1.wcnf',
-  #   'treewidth-computation/TWComp_barley-pp_N26.wcnf',
-  # ]
-
   wdimacs_instances = [
     'bcp-fir/normalized-fir06_area_delay.wcnf',
     'reversi/rev66-4.wcnf',
     'pbo-mqc-nencdr/10tree305p.wcnf',
   ]
 
-  # parameter         = 'population_size'
-  # parameter_values  = [25,50,100,150,200,250]
-  # parameter         = 'parents_ratio'
-  # parameter_values  = [0.1,0.2,0.3,0.4,0.5]
   # parameter         = 'lambda_mu_ratio'
   # parameter_values  = [2,3,4,5,6,7,8,9,10]
-  # parameter         = 'crossover_prob'
-  # parameter_values  = [0,0.1,0.5,0.75,0.8,0.85,0.9,0.95,1]
-  parameter         = 'mutation_prob'
-  parameter_values  = ['1/n','5/n','10/n','15/n','20/n','25/n']
-  # parameter         = 'mu'
-  # parameter_values  = [2,3,4,5,6,7,8]
+  parameter         = 'crossover_prob'
+  parameter_values  = [0,0.1,0.5,0.75,0.8,0.85,0.9,0.95,1]
+  # parameter         = 'mutation_prob'
+  # parameter_values  = ['1/n','5/n','10/n','15/n','20/n','25/n']
   parallelism       = max(1, os.cpu_count() - 3) # leave 3 cores free for OS
 
   print(f"""
@@ -120,8 +82,6 @@ if __name__ == '__main__':
   # Create a figure with subplots for each instance
   fig, axes = plt.subplots(1, len(wdimacs_instances), figsize=(5*len(wdimacs_instances), 5), constrained_layout=True)
   fig.set_size_inches(5 * len(wdimacs_instances), 5)
-  # fig.suptitle(f" time_budget={time_budget}s\nrepetitions={repetitions}")
-  # plt.subplots_adjust(top=0.75)  # make room at top
 
   info_text = ', '.join([ f"{k}: {v}" for k,v in vars(args).items() if v is not None ])
   fig.suptitle(info_text, fontsize=9, family='monospace',
@@ -139,7 +99,6 @@ if __name__ == '__main__':
     if not os.path.isfile(f"{instance_folder}/{wdimacs}"):
       raise Exception(f"file '{instance_folder}/{wdimacs}' doesn't exist")
     
-    # 
     wdimacs_parsed[wdimacs] = parse_wdimacs(f"{instance_folder}/{wdimacs}")
     n,m,clauses = wdimacs_parsed[wdimacs]
     
@@ -175,8 +134,8 @@ if __name__ == '__main__':
       )
       end = time.perf_counter()
 
-      nsat_log = [int(nsat) for _, nsat, _ in result]
-      t_log    = [int(t)    for t, _, _ in result]
+      nsat_log = [int(nsat) for _, nsat, _, *_ in result]
+      t_log    = [int(t)    for t, _, _, *_ in result]
       wdimacs_runs[wdimacs][f"{parameter_value}"] = nsat_log
 
       print(f"{wdimacs}\t{parameter_value}\t{repetitions}\t{(end-start):.6f}s\t{np.array(t_log).mean()}\t{np.array(nsat_log).mean()}")
@@ -189,25 +148,6 @@ if __name__ == '__main__':
       axes[idx].set_ylabel("nsat")
       # axes[idx].axhline(y=m, linestyle="--", linewidth=1, color="#008000")
       plt.pause(0.1)
-
-      # nsat_log = []
-      # for i in range(0,int(repetitions)):
-
-      #   # run EA
-      #   t,nsat,xbest = evolutionary_algorithm(n, m, clauses, int(time_budget),
-      #                                         **{**kwargs,parameter:real_parameter_value})
-      #   nsat_log.append(int(nsat))
-      #   wdimacs_runs[wdimacs][f"{parameter_value}"] = nsat_log
-
-      #   print(f"{wdimacs}\t{parameter_value}\t{i+1}/{repetitions}\t{t}\t{nsat}/{m}")
-
-      #   # Update boxplot interactively
-      #   axes[idx].clear()
-      #   axes[idx].boxplot(wdimacs_runs[wdimacs].values(), tick_labels=wdimacs_runs[wdimacs].keys())
-      #   axes[idx].set_title(f"{wdimacs}")
-      #   axes[idx].set_xlabel(parameter)
-      #   axes[idx].set_ylabel("nsat")
-      #   plt.pause(0.1)
 
     # draw boxplot of results
     if verbose >= 1:
