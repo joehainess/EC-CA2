@@ -55,9 +55,9 @@ Joseph Haines\\
 
 % \texttt{def evolutionary\_algorithm(n: int, m: int, clauses: List[List[int]], time\_budget: int, **kwargs):}
 
-$\mu,\lambda$ Binary Genetic Algorithm with Crossover for MAX-SAT Optimisation \\
-\textit{Python Implementation: ./common/maxsat.py} \\
-\textit{Full Source Code: [TODO]} \\
+\textbf{Algorithm:} $\mu,\lambda$ Binary Genetic Algorithm with Crossover (for MAX-SAT Optimisation) \\
+\textit{\textbf{Python Implementation:} ./src/common/maxsat.py} \\
+\textit{\textbf{Full Source Code:} https://github.com/joehainess/EC-CA2} \\
 
 \noindent \textbf{Pseudocode:}
 \begin{verbatim}
@@ -213,7 +213,7 @@ return t,nsat,xbest
 \noindent Three parameters were chosen to run experiments against:
 \begin{itemize} \parskip0pt \parsep0pt
   \item \textbf{\texttt{lambda\_mu\_ratio}}: The ratio of $\lambda:\mu$ (where $\mu = 5$)
-  \item \textbf{\texttt{crossover\_prob}}: The probability of applying a single-point crossover between 2 offspring
+  \item \textbf{\texttt{crossover\_prob}}: The probability of applying single-point crossover between 2 offspring
   \item \textbf{\texttt{mutation\_prob}}: The probability of flipping a single bit in the binary representation of an individual
 \end{itemize}
 
@@ -310,7 +310,6 @@ To confirm this hypothesis, additional experiments were conducted with a longer 
 
 The explanation is clear: with only 5 seconds, the algorithm explores broadly with high mutation but lacks time to refine solutions, making the initial diversity beneficial. With 20 seconds, the extended time allows lower mutation rates to perform refining exploitation, yielding superior final solutions. These findings demonstrate that mutation rate efficacy is highly time-budget dependent. For the 5-second constraint used in the main experiments, a high mutation rate (10/n--15/n) is effective; however, for longer runs with adequate convergence time, the base algorithm's conservative choice of 1/n is indeed optimal.
 
-% \noindent \textbf{Future Direction: Adaptive Mutation Rate} \\
 Given the clear time-budget dependency observed, an adaptive mutation strategy that decreases the rate over time could potentially combine the benefits of both regimes. Such an approach would provide high initial population diversity to escape local optima and sample broadly, while transitioning toward lower mutation rates as the time budget approaches exhaustion, allowing exploitation and refinement of promising solutions. This strategy shares conceptual similarity with simulated annealing, which gradually reduces temperature (exploration intensity) over time to balance exploration and exploitation. Such an approach could represent a promising direction for improving this algorithm's performance across time budgets and problem instances.
 
 \end{document}
