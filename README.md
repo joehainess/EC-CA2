@@ -24,7 +24,7 @@ Genetic algorithm implementations for solving the Maximum Satisfiability (MAX-SA
 ## Documentation & Deployment
 
 - **`Dockerfile`** - Submission Docker image definition
-- **`report.tex` / `report.pdf`** - Report for Exercises 4 and 5
+- **`exercise.tex` / `exercise.pdf`** - Report for Exercises 4 and 5
 
 ## Author
 

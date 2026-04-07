@@ -11,6 +11,6 @@ __pycache__
 .venv
 .DS_Store
 
-report.*
-!report.tex
-!report.pdf
+exercise.*
+!exercise.tex
+!exercise.pdf
