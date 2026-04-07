@@ -87,6 +87,7 @@ def n_sat(clauses: List[List[int]], assignment: List[int]):
     
 #     return fitness
 
+# Improved nsat with more efficient matrix operations
 def population_n_sat(clauses, population):
     from collections import defaultdict
     pop_size = population.shape[0]
@@ -117,13 +118,15 @@ def get_param(d, key, default):
     val = d.get(key)
     if val is None:
         return default
-    return type(default)(val)   # cast to whatever type the default is
-
+    try:
+        return type(default)(val)
+    except Exception:
+        return val
 
 def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget: int, **kwargs):
   """
-  mu, lambda selection
-  
+  mu, lambda binary genetic algorithm with crossover
+
   Args:
     n (int): number of variables
     m (int): number of clauses
@@ -142,6 +145,7 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
 
   ax              = kwargs.get('ax')
   line            = kwargs.get('line')
+  queue           = kwargs.get('queue')
   verbose         = get_param(kwargs, 'verbose', 0)
 
   mu_count        = get_param(kwargs, 'mu', 5)
@@ -177,8 +181,6 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
   history_best_nsat   = []
   while time.time() <= end and (max_generations == -1 or generation < max_generations):
 
-    loop_start = time.perf_counter()
-
     generation += 1
 
     # sample lambda_count offspring from population uniformly at random
@@ -195,20 +197,17 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
         c2 = np.concatenate((offspring[o2][0:crossover], offspring[o1][crossover:n]))
         offspring[o1] = c1
         offspring[o2] = c2
-    t3 = time.perf_counter()
     
     # apply mutation to offspring
     for idx,child in enumerate(offspring):
       mask = rng.random(n) < mutation_prob
       offspring[idx] = np.logical_xor(child, mask).astype(int)
     
-    t4 = time.perf_counter()
     # offspring truncation selection
     offspring_costs = population_n_sat(clauses, offspring)
     idxs            = np.argsort(offspring_costs)[-mu_count:]
     population      = offspring[idxs]
     costs           = offspring_costs[idxs]
-    t5 = time.perf_counter()
 
     # Update best idx
     best_idx  = np.argmax(costs)
@@ -225,11 +224,15 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
       # so we can exit early
       break
     
-    t6 = time.perf_counter()
-
+    # Update generation -> best_nsat log
     history_generations.append(generation)
     history_best_nsat.append(best_nsat)
 
+    # Add current generation's best_nsat to multiprocessing queue
+    if queue is not None:
+      queue.put((generation,best_nsat))
+
+    # Update graph line if present
     if ax and line and generation % 10 == 0:
       # update graph every 10 iterations
       line.set_xdata(history_generations)
@@ -239,21 +242,6 @@ def evolutionary_algorithm(n: int, m: int, clauses: List[List[int]], time_budget
       ax.autoscale_view()
       plt.draw()
       plt.pause(0.001)
-
-    t7 = time.perf_counter()
-
-    # print(f"Part 1: {t1 - loop_start:.6f}s")
-    # print(f"Part 2: {t2 - t1:.6f}s")
-    # print(f"Part 3: {t3 - t2:.6f}s")
-    # print(f"Part 4: {t4 - t3:.6f}s")
-    # print(f"Part 5: {t5 - t4:.6f}s")
-    # print(f"Part 6: {t6 - t5:.6f}s")
-    # print(f"Part 7: {t7 - t6:.6f}s")
-  
-  # # draw "crosshair" on final point
-  # if ax:
-  #   ax.axhline(y=nsat,       linestyle=":", linewidth=1, color="#000000", alpha=0.2)
-  #   ax.axvline(x=generation, linestyle=":", linewidth=1, color="#000000", alpha=0.2)
 
   t = generation * mu_count
   return t,nsat,xbest,history_generations,history_best_nsat

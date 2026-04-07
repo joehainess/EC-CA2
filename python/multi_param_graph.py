@@ -10,6 +10,42 @@ from common.maxsat import parse_wdimacs,evolutionary_algorithm
 import matplotlib.pyplot as plt
 
 
+def run_parallel_with_queue(fn, n, args, kwargs, max_workers, cb):
+    """
+    Run fn(*args, **kwargs) n times in parallel.
+    Returns a list of n results in completion order.
+    Invokes the cb function every time the generation record is updated (via Queue puts).
+    """
+    results = [None] * n
+
+    gen_record = {}
+
+    with Manager() as manager:
+      queue = manager.Queue()
+
+      with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(fn, *args, **{**kwargs,'queue':queue}): i for i in range(n)}
+
+        done_count = 0
+        while done_count < len(futures):
+          while not queue.empty():
+            gen,nsat = queue.get()
+            if gen not in gen_record:
+              gen_record[gen] = []
+            gen_record[gen].append(nsat)
+            cb(gen_record)
+          
+          for future in futures:
+            if future.done() and not hasattr(future, "_counted"):
+              future._counted = True
+              i = futures[future]
+              results[i] = future.result()
+              done_count = done_count + 1
+        
+        time.sleep(0.1)
+
+    return results
+
 
 if __name__ == '__main__':
 
@@ -19,16 +55,9 @@ if __name__ == '__main__':
   prog_name = sys.argv[0]
 
   parser = argparse.ArgumentParser(prog=prog_name)
-  # parser.add_argument('-question',    required=True, choices=['3'])
   parser.add_argument('-wdimacs',     required=True)
   parser.add_argument('-time_budget', required=True)
   parser.add_argument('-repetitions', required=True)
-  # parser.add_argument('-parameter',        required=True)
-  # parser.add_argument('-parameter_values', required=True)
-
-  # parser.add_argument('-population_size')
-  # parser.add_argument('-crossover_prob')
-  # parser.add_argument('-mutation_prob')
 
   parser.add_argument('-max_generations')
   parser.add_argument('-verbose','-v', action='count')
@@ -51,14 +80,14 @@ if __name__ == '__main__':
   # parameter_values  = [0.1,0.2,0.3,0.4,0.5]
   # parameter         = 'lambda_mu_ratio'
   # parameter_values  = [2,3,4,5,6,7,8,9,10]
-  parameter         = 'crossover_prob'
-  parameter_values  = [0,0.1,0.5,0.75,0.8,0.85,0.9,0.95,1]
-  # parameter         = 'mutation_prob'
-  # parameter_values  = ['1/n','5/n','10/n','15/n','20/n','25/n']
+  # parameter         = 'crossover_prob'
+  # parameter_values  = [0,0.1,0.5,0.75,0.8,0.85,0.9,0.95,1]
+  parameter         = 'mutation_prob'
+  parameter_values  = ['1/n','5/n','10/n','15/n','20/n','25/n']
   # parameter         = 'mu'
   # parameter_values  = [2,3,4,5,6,7,8]
-  # colors  = ["#b44","#4b4","#44b","#bb4","#b4b","#4bb"]
-  colors  = ["#DBA714","#391FEA","#E5154B","#3E9A71","#3495F5","#DB5E3A","#46385C","#8625B8","#83CA5D","#6252A1","#57510C","#D9B182",]
+  colors            = ["#DBA714","#391FEA","#E5154B","#3E9A71","#3495F5","#DB5E3A","#46385C","#8625B8","#83CA5D","#6252A1","#57510C","#D9B182",]
+  parallelism       = max(1, os.cpu_count() - 3) # leave 3 cores free for OS
 
   print(f"""
   wdimacs               {wdimacs}
@@ -67,8 +96,9 @@ if __name__ == '__main__':
 
   time_budget           {time_budget}s
   repetitions           {repetitions}
+  parallelism           {parallelism}
 
-  total execution time  {(len(parameter_values) * (time_budget*repetitions)):.0f}s
+  total execution time  {((len(parameter_values) * (time_budget*repetitions)) / parallelism):.0f}s
   """)
 
   n,m,clauses = parse_wdimacs(f"{wdimacs}")
@@ -76,7 +106,6 @@ if __name__ == '__main__':
 
   # start graph
   plt.ion()
-  # fig, ax = plt.subplots()
   fig, ax = plt.subplots(1, 1, figsize=(5+1, 5), constrained_layout=True)
   info_text = f"time_budget: {time_budget}, repetitions: {repetitions}"
   fig.suptitle(info_text, fontsize=9, family='monospace',
@@ -85,7 +114,6 @@ if __name__ == '__main__':
   ax.set_xlabel("Generation")
   ax.set_ylabel("Best N Sat")
   # ax.axhline(y=m, linestyle="--", linewidth=1, color="#008000")
-  # ax.set_title("Evolutionary Algorithm Progress")
   ax.set_title(f"{wdimacs}\n(vars={n},clauses={m})", fontsize=9)
 
   for j,parameter_value in enumerate(parameter_values):
@@ -95,34 +123,25 @@ if __name__ == '__main__':
 
     fill = None
     avg_line = None
-    history_map = {}
+    last_updated = time.perf_counter()
 
-    # Run repetitions of evolutionary_algorithm in parallel
-    for i in range(0,int(repetitions)):
-
-      line, = ax.plot([], [], color=color, linestyle="-", linewidth=0.5, alpha=0.8)
-
-      func_kwargs = {**kwargs,"ax":ax,"line":line,parameter:real_parameter_value}
-      # func_kwargs = {**kwargs,"ax":ax,parameter:real_parameter_value}
-      # start = time.perf_counter()
-      t,nsat,xBest,history_gen,history_nsat = evolutionary_algorithm(n, m, clauses, int(time_budget), **func_kwargs)
-      line.remove()
-      # end = time.perf_counter()
-      
-      # Compute generation -> min/max/avg
+    def cb(gen_record):
+      """
+        Updates plot at regular intervals 
+      """
+      global fill, avg_line, last_updated
+      if time.perf_counter() < last_updated + 0.25:
+        return
+      last_updated = time.perf_counter()
       gens = []
       gen_avgs = []
       gen_mins = []
       gen_maxs = []
-      for idx,gen in enumerate(history_gen):
-        gen_nsat = history_nsat[idx]
-        if gen not in history_map:
-          history_map[gen] = []
-        history_map[gen].append(gen_nsat)
+      for gen,nsats in gen_record.items():
         gens.append(gen)
-        gen_avgs.append(sum(history_map[gen]) / len(history_map[gen]))
-        gen_mins.append(min(history_map[gen]))
-        gen_maxs.append(max(history_map[gen]))
+        gen_avgs.append(sum(nsats) / len(nsats))
+        gen_mins.append(min(nsats))
+        gen_maxs.append(max(nsats))
 
       # Plot avg line
       if avg_line is None:
@@ -135,6 +154,21 @@ if __name__ == '__main__':
       if fill is not None:
         fill.remove()
       fill = ax.fill_between(gens, gen_mins, gen_maxs, color=color, alpha=0.1)
+      
+      plt.pause(0.01)
+
+    real_parameter_value = real_parameter_values[j]
+
+    # Run repetitions of evolutionary_algorithm in parallel
+    func_args   = [n, m, clauses, int(time_budget)]
+    func_kwargs = {**kwargs,parameter:real_parameter_value}
+    result = run_parallel_with_queue(
+      evolutionary_algorithm,
+      int(repetitions),
+      func_args, func_kwargs,
+      os.process_cpu_count() - 3,
+      cb
+    )
 
   print("done!")
 
