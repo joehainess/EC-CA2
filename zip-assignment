@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+EXPORT_NAME="ec2025cw2-jfh245"
+
+if [[ -e "./${EXPORT_NAME}" ]]; then
+  rm -rf "./${EXPORT_NAME}"
+fi
+
+if [[ -e "./${EXPORT_NAME}.zip" ]]; then
+  rm -rf "./${EXPORT_NAME}.zip"
+fi
+
+mkdir "./${EXPORT_NAME}"
+
+find {Dockerfile,main.py,src,exercise.pdf} -type f -not -path '*/__pycache__/*' \
+| while read l; do
+
+  mkdir -p $(dirname "./${EXPORT_NAME}/$l")
+  cp "$l" "./${EXPORT_NAME}/$l"
+
+done
+
+zip -r "$EXPORT_NAME.zip" "$EXPORT_NAME" >&2
+rm -rf "$EXPORT_NAME"
+echo "$EXPORT_NAME.zip"
